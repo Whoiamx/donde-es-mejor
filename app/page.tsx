@@ -1,103 +1,238 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+
+import { MapPin, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { MisFavoritos } from "./components/MisFavoritos";
+import { Buscador } from "./components/Buscador";
+import { BotonLocation } from "./components/BotonLocation";
+import { LugaresCard } from "./components/LugaresCard";
+
+interface Place {
+  id: string;
+  name: string;
+  description: string;
+  rating: number;
+  address: string;
+  category: string;
+  distance?: string;
+  image?: string;
+}
+
+export default function HomePage() {
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [searchResults, setSearchResults] = useState<Place[]>([]);
+  const [favorites, setFavorites] = useState<Place[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Solicitar geolocalización al cargar la página
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error);
+        }
+      );
+    }
+  }, []);
+
+  // Función para buscar lugares (simulada - aquí conectarías con Google Places API)
+  const searchPlaces = async (query: string) => {
+    if (!userLocation || !query.trim()) return;
+
+    setIsLoading(true);
+
+    // Simulación de búsqueda - reemplazar con Google Places API
+    setTimeout(() => {
+      const mockResults: Place[] = [
+        {
+          id: "1",
+          name: "Restaurante El Buen Sabor",
+          description:
+            "Comida tradicional con los mejores ingredientes locales",
+          rating: 4.5,
+          address: "Calle Principal 123",
+          category: "Restaurante",
+          distance: "0.2 km",
+          image: "/cozy-italian-restaurant.png",
+        },
+        {
+          id: "2",
+          name: "Peluquería Estilo Moderno",
+          description: "Cortes modernos y tratamientos capilares profesionales",
+          rating: 4.8,
+          address: "Avenida Central 456",
+          category: "Peluquería",
+          distance: "0.5 km",
+          image: "/hair-salon-interior.png",
+        },
+        {
+          id: "3",
+          name: "Café Aromático",
+          description: "El mejor café de la ciudad con ambiente acogedor",
+          rating: 4.3,
+          address: "Plaza Mayor 789",
+          category: "Café",
+          distance: "0.8 km",
+          image: "/cozy-corner-cafe.png",
+        },
+      ].filter(
+        (place) =>
+          place.name.toLowerCase().includes(query.toLowerCase()) ||
+          place.category.toLowerCase().includes(query.toLowerCase())
+      );
+
+      setSearchResults(mockResults);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const toggleFavorite = (place: Place) => {
+    setFavorites((prev) => {
+      const isFavorite = prev.some((fav) => fav.id === place.id);
+      if (isFavorite) {
+        return prev.filter((fav) => fav.id !== place.id);
+      } else {
+        return [...prev, place];
+      }
+    });
+  };
+
+  const isFavorite = (placeId: string) => {
+    return favorites.some((fav) => fav.id === placeId);
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold text-foreground">
+                Lugares Cercanos
+              </h1>
+            </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="relative bg-transparent"
+                >
+                  <Heart className="h-4 w-4" />
+                  {favorites.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {favorites.length}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <MisFavoritos
+                  favorites={favorites}
+                  onRemoveFavorite={(place) => toggleFavorite(place)}
+                />
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Location Status */}
+        <BotonLocation
+          userLocation={userLocation}
+          onLocationUpdate={setUserLocation}
+        />
+
+        {/* Search Bar */}
+        <Buscador
+          onSearch={searchPlaces}
+          isLoading={isLoading}
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Resultados de búsqueda
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {searchResults.map((place) => (
+                <LugaresCard
+                  key={place.id}
+                  place={place}
+                  isFavorite={isFavorite(place.id)}
+                  onToggleFavorite={() => toggleFavorite(place)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Empty State */}
+        {searchResults.length === 0 && searchQuery && !isLoading && (
+          <div className="text-center py-12">
+            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No se encontraron lugares
+            </h3>
+            <p className="text-muted-foreground">
+              Intenta buscar restaurantes, peluquerías, cafés, etc.
+            </p>
+          </div>
+        )}
+
+        {/* Welcome State */}
+        {searchResults.length === 0 && !searchQuery && (
+          <div className="text-center py-12">
+            <MapPin className="h-16 w-16 text-primary mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-foreground mb-4">
+              Descubre lugares increíbles cerca de ti
+            </h2>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Busca restaurantes, peluquerías, cafés y muchos otros lugares.
+              Guarda tus favoritos para encontrarlos fácilmente.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {["Restaurantes", "Peluquerías", "Cafés", "Tiendas"].map(
+                (category) => (
+                  <Button
+                    key={category}
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery(category);
+                      searchPlaces(category);
+                    }}
+                    className="text-sm"
+                  >
+                    {category}
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
